@@ -89,3 +89,72 @@
 - 班级：计科2403
 - GitHub：ReStart66
 - 仓库用途：用于完成微服务课程的需求分析、项目实现、测试、部署和文档整理。
+## 第 3 周：Spring Boot 工程运行说明
+
+### Java 与 Maven 要求
+
+- Java：25
+- Spring Boot：4.0.8
+- Maven Wrapper：项目内置
+- Maven 工程目录：`monolith/`
+
+### 启动命令
+
+Windows PowerShell：
+
+```powershell
+cd monolith
+.\mvnw.cmd spring-boot:run
+```
+
+Git Bash：
+
+```bash
+cd monolith
+./mvnw spring-boot:run
+```
+
+默认端口：`8080`。
+
+### 测试命令
+
+Windows PowerShell：
+
+```powershell
+cd monolith
+.\mvnw.cmd test
+```
+
+Git Bash：
+
+```bash
+cd monolith
+./mvnw test
+```
+
+### 接口地址
+
+问候接口：
+
+```text
+GET http://localhost:8080/api/hello
+```
+
+健康检查：
+
+```text
+GET http://localhost:8080/actuator/health
+```
+
+健康检查正常时返回 `UP`。
+
+### 当前尚未实现的业务能力
+
+本周只完成 Spring Boot 工程基础框架、运行接口、健康检查和启动测试，暂未实现：
+
+- 数据库持久化
+- 业务模型和表结构
+- Service 和 Repository
+- 完整 REST API
+- 用户认证和权限
+- 预约、维修工单、配件库存和结算等业务功能
