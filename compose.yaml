@@ -1,0 +1,44 @@
+services:
+  mysql:
+    image: mysql:8.4.11
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD must be set in .env}"
+      MYSQL_DATABASE: maintenance
+      MYSQL_USER: maintenance
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:?MYSQL_PASSWORD must be set in .env}"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - maintenance-network
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
+
+  app:
+    image: maintenance-monolith:week05
+    build:
+      context: ./monolith
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: "jdbc:mysql://mysql:3306/maintenance?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai"
+      DB_USER: maintenance
+      DB_PASSWORD: "${MYSQL_PASSWORD:?MYSQL_PASSWORD must be set in .env}"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - maintenance-network
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+
+networks:
+  maintenance-network:
+    driver: bridge

@@ -268,3 +268,97 @@ cd monolith
 
 该方式只用于接口演示和截图；正式数据库持久化仍使用 MySQL 配置。
 
+
+## 第 5 周：Docker 容器化与 MySQL 持久化
+
+### 准备环境变量
+
+```powershell
+Copy-Item .env.example .env
+notepad .env
+```
+
+将 `.env` 中的模板密码替换为本地练习密码。实际 `.env` 已被 `.gitignore` 忽略。
+
+### 构建镜像
+
+```powershell
+docker build -t maintenance-monolith:week05 ./monolith
+```
+
+镜像采用两阶段构建：Maven 阶段编译、测试和打包，JRE 阶段只运行 JAR。
+
+### 启动和查看状态
+
+```powershell
+docker compose up -d --build
+docker compose ps
+docker compose logs --tail=100 app
+```
+
+MySQL 服务名为 `mysql`，应用通过 `jdbc:mysql://mysql:3306/maintenance` 访问数据库。
+
+### 健康检查
+
+```powershell
+curl.exe -i http://localhost:8080/actuator/health
+```
+
+### 业务 API 示例
+
+创建车辆：
+
+```powershell
+curl.exe -i -X POST http://localhost:8080/api/vehicles `
+  -H "Content-Type: application/json" `
+  -d '{"ownerName":"陆兵尧","plateNumber":"浙A80001","brand":"大众","model":"迈腾","mileage":56000}'
+```
+
+查询车辆列表：
+
+```powershell
+curl.exe -i http://localhost:8080/api/vehicles
+```
+
+创建工单前，将 `VEHICLE_ID` 替换为车辆响应中的 `id`：
+
+```powershell
+curl.exe -i -X POST http://localhost:8080/api/work-orders `
+  -H "Content-Type: application/json" `
+  -d '{"vehicleId":"VEHICLE_ID","serviceAdvisorName":"王顾问","technicianName":"李技师","faultDescription":"容器化维修验证"}'
+```
+
+查询车辆工单：
+
+```powershell
+curl.exe -i "http://localhost:8080/api/work-orders?vehicleId=VEHICLE_ID"
+```
+
+### 验证数据持久化
+
+```powershell
+docker compose down
+docker compose up -d
+```
+
+`docker compose down` 只删除容器和网络，保留命名卷。不要在本步骤执行 `docker compose down -v`。
+
+重新启动后，用相同车辆 ID 和工单 ID 查询，确认数据仍然存在。
+
+### 停止服务
+
+```powershell
+docker compose down
+```
+
+### 自动化测试
+
+```powershell
+cd monolith
+.\mvnw.cmd test
+```
+
+### 第 05 周文档
+
+- 容器化记录：`docs/homework/week-05/index.md`
+- 截图目录：`docs/homework/week-05/screenshots/`
