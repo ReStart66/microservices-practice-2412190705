@@ -113,3 +113,20 @@ GET /actuator/health                        -> 200，status=UP
 ```
 
 验证证明 Controller、DTO、Service、Repository 和数据库映射已经连通。
+
+### 真实 MySQL 持久化验证
+
+本机 MySQL 服务 `MySQL80` 已启动，实际使用版本为 MySQL `8.0.43`，数据库名为 `maintenance`。
+
+通过 REST API 创建车辆和维修工单后，在 MySQL 中确认存在 `vehicles`、`work_orders` 两张表及对应记录。完成工单后状态保存为 `COMPLETED`。
+
+随后停止并重新启动 Spring Boot 应用，再次查询接口：
+
+```text
+车辆数量：1
+工单数量：1
+工单状态：COMPLETED
+健康检查：UP
+```
+
+重启后仍能读到相同车辆和工单，说明 JPA 数据已持久化到 MySQL，而不是保存在应用内存中。

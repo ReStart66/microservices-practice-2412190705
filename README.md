@@ -169,7 +169,7 @@ GET http://localhost:8080/actuator/health
 - Java 25
 - Spring Boot 4.0.8
 - Maven Wrapper
-- MySQL 8.4（运行应用时）
+- MySQL 8.x（本机验证版本 8.0.43）
 - H2（自动化测试）
 
 ### MySQL 初始化
@@ -267,3 +267,4 @@ cd monolith
 ```
 
 该方式只用于接口演示和截图；正式数据库持久化仍使用 MySQL 配置。
+

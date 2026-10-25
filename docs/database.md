@@ -2,7 +2,7 @@
 
 ## 数据库概览
 
-- 数据库：MySQL 8.4
+- 数据库：MySQL 8.x（本机验证版本为 8.0.43）
 - 数据库名：`maintenance`
 - 字符集：`utf8mb4`
 - ORM：Spring Data JPA / Hibernate
@@ -76,3 +76,4 @@ erDiagram
 测试使用 H2 内存数据库，`ddl-auto: create-drop`。Repository、Service 和 API 测试会在每个测试中自行创建数据并通过事务或测试框架回滚，不依赖本机 MySQL 历史数据。
 
 MySQL 手工验证可使用 `monolith/scripts/sample-data.sql`。
+
