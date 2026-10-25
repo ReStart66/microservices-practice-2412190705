@@ -4,6 +4,17 @@ server:
 spring:
   application:
     name: monolith
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/maintenance}
+    username: ${DB_USER:maintenance}
+    password: ${DB_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
 
 management:
   endpoints:
