@@ -158,3 +158,112 @@ GET http://localhost:8080/actuator/health
 - 完整 REST API
 - 用户认证和权限
 - 预约、维修工单、配件库存和结算等业务功能
+
+
+## 第 4 周：汽车维修工单单体应用
+
+本周围绕“车辆建档并创建维修工单”实现模型、Service、REST API、JPA Repository 和 MySQL 持久化。工程位置仍为 `monolith/`。
+
+### 运行环境
+
+- Java 25
+- Spring Boot 4.0.8
+- Maven Wrapper
+- MySQL 8.4（运行应用时）
+- H2（自动化测试）
+
+### MySQL 初始化
+
+以 MySQL 管理员身份执行 `monolith/scripts/mysql-init.sql`，并先修改脚本中的示例密码：
+
+```powershell
+mysql -u root -p < .\monolith\scripts\mysql-init.sql
+```
+
+启动应用前设置数据库密码：
+
+```powershell
+cd monolith
+$env:DB_PASSWORD = '你的数据库密码'
+.\mvnw.cmd spring-boot:run
+```
+
+默认连接：
+
+```text
+DB_URL=jdbc:mysql://localhost:3306/maintenance
+DB_USER=maintenance
+DB_PASSWORD=你的数据库密码
+```
+
+表结构由 JPA `ddl-auto: update` 创建。应用启动后可选执行样例数据：
+
+```powershell
+mysql -u maintenance -p maintenance < .\scripts\sample-data.sql
+```
+
+### REST API
+
+| 方法 | 路径 | 说明 | 成功状态 |
+|---|---|---|---|
+| POST | `/api/vehicles` | 创建车辆 | 201 |
+| GET | `/api/vehicles` | 查询车辆列表 | 200 |
+| GET | `/api/vehicles/{id}` | 查询车辆详情 | 200 |
+| POST | `/api/work-orders` | 创建维修工单 | 201 |
+| GET | `/api/work-orders` | 查询工单列表，可传 `vehicleId` | 200 |
+| GET | `/api/work-orders/{id}` | 查询工单详情 | 200 |
+| PATCH | `/api/work-orders/{id}/complete` | 完成维修工单 | 200 |
+
+业务规则：同一车辆存在 `CREATED` 或 `IN_PROGRESS` 工单时，拒绝创建新的活跃工单并返回 `409`；工单完成后允许创建下一次维修工单。
+
+### 可直接运行的 curl 示例
+
+创建车辆：
+
+```powershell
+curl.exe -i -X POST http://localhost:8080/api/vehicles -H "Content-Type: application/json" -d '{"ownerName":"陆兵尧","plateNumber":"浙A12345","brand":"大众","model":"迈腾","mileage":52000}'
+```
+
+查询车辆列表：
+
+```powershell
+curl.exe -i http://localhost:8080/api/vehicles
+```
+
+创建工单前，将 `VEHICLE_ID` 替换为创建车辆响应中的 `id`：
+
+```powershell
+curl.exe -i -X POST http://localhost:8080/api/work-orders -H "Content-Type: application/json" -d '{"vehicleId":"VEHICLE_ID","serviceAdvisorName":"王顾问","technicianName":"李技师","faultDescription":"发动机异响"}'
+```
+
+完成工单：
+
+```powershell
+curl.exe -i -X PATCH http://localhost:8080/api/work-orders/WORK_ORDER_ID/complete
+```
+
+### 测试
+
+```powershell
+cd monolith
+.\mvnw.cmd test
+```
+
+测试覆盖 Repository 读写和唯一约束、Service 活跃工单规则、API 的 201/400/404/409 响应，使用 H2 并自动准备数据。
+
+### 第 04 周文档
+
+- 项目提案：`docs/project-proposal.md`
+- 数据库设计：`docs/database.md`
+- 每周记录：`docs/homework/week-04/index.md`
+
+### 无本机 MySQL 时的本地演示
+
+测试依赖中包含 H2，可使用仅用于本地演示的 `test` 配置启动：
+
+```powershell
+cd monolith
+.\mvnw.cmd "-Dspring-boot.run.useTestClasspath=true" "-Dspring-boot.run.profiles=test" spring-boot:run
+```
+
+该方式只用于接口演示和截图；正式数据库持久化仍使用 MySQL 配置。
