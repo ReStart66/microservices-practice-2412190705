@@ -362,3 +362,84 @@ cd monolith
 
 - 容器化记录：`docs/homework/week-05/index.md`
 - 截图目录：`docs/homework/week-05/screenshots/`
+
+## 第 6 周：微服务拆分
+
+### 服务与端口
+
+| 服务 | 端口 | 数据库 |
+|---|---:|---|
+| `vehicle-service` | 8081 | `vehicle_db` |
+| `part-service` | 8083 | `part_db` |
+| `work-order-service` | 8082 | `work_order_db` |
+
+`work-order-service` 通过 HTTP 调用车辆服务和配件服务。服务地址由 `VEHICLE_SERVICE_URL`、`PART_SERVICE_URL` 覆盖，RestTemplate 连接超时 3 秒、读取超时 5 秒。
+
+### 启动
+
+```powershell
+Copy-Item .env.example .env
+notepad .env
+docker compose up -d --build --remove-orphans
+docker compose ps
+```
+
+### 单独运行测试
+
+```powershell
+cd services/vehicle-service
+mvn test
+
+cd ../part-service
+mvn test
+
+cd ../work-order-service
+mvn test
+```
+
+### Smoke Test
+
+从仓库根目录运行：
+
+```bash
+bash scripts/smoke-test.sh
+```
+
+### API 示例
+
+创建车辆：
+
+```powershell
+curl.exe -i -X POST http://localhost:8081/api/vehicles `
+  -H "Content-Type: application/json" `
+  -d '{"ownerName":"Lu Bingyao","plateNumber":"W06-001","brand":"Volkswagen","model":"Magotan","mileage":60000}'
+```
+
+创建配件：
+
+```powershell
+curl.exe -i -X POST http://localhost:8083/api/parts `
+  -H "Content-Type: application/json" `
+  -d '{"code":"PART-001","name":"Oil Filter","stockQuantity":5}'
+```
+
+创建工单时替换 `VEHICLE_ID`、`PART_ID`：
+
+```powershell
+curl.exe -i -X POST http://localhost:8082/api/work-orders `
+  -H "Content-Type: application/json" `
+  -d '{"vehicleId":"VEHICLE_ID","partId":"PART_ID","partQuantity":2,"serviceAdvisorName":"Advisor","technicianName":"Technician","faultDescription":"Engine noise"}'
+```
+
+### 停止
+
+```powershell
+docker compose down
+```
+
+`docker compose down` 保留三个命名数据卷，`down -v` 会删除数据。
+
+### 文档
+
+- 微服务设计：`docs/microservices-design.md`
+- 第 06 周记录：`docs/homework/week-06/index.md`

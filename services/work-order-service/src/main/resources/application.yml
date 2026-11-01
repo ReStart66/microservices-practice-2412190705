@@ -1,0 +1,27 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: work-order-service
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/work_order_db}
+    username: ${DB_USER:work_order_user}
+    password: ${DB_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+services:
+  vehicle-url: ${VEHICLE_SERVICE_URL:http://localhost:8081}
+  part-url: ${PART_SERVICE_URL:http://localhost:8083}

@@ -1,15 +1,13 @@
 services:
-  mysql:
+  vehicle-db:
     image: mysql:8.4.11
     environment:
-      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD must be set in .env}"
-      MYSQL_DATABASE: maintenance
-      MYSQL_USER: maintenance
-      MYSQL_PASSWORD: "${MYSQL_PASSWORD:?MYSQL_PASSWORD must be set in .env}"
-    volumes:
-      - mysql-data:/var/lib/mysql
-    networks:
-      - maintenance-network
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}"
+      MYSQL_DATABASE: vehicle_db
+      MYSQL_USER: vehicle_user
+      MYSQL_PASSWORD: "${VEHICLE_DB_PASSWORD:?set VEHICLE_DB_PASSWORD in .env}"
+    volumes: [vehicle-data:/var/lib/mysql]
+    networks: [maintenance-network]
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$${MYSQL_ROOT_PASSWORD} --silent"]
       interval: 5s
@@ -18,26 +16,95 @@ services:
       start_period: 30s
     restart: unless-stopped
 
-  app:
-    image: maintenance-monolith:week05
-    build:
-      context: ./monolith
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
+  part-db:
+    image: mysql:8.4.11
     environment:
-      DB_URL: "jdbc:mysql://mysql:3306/maintenance?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai"
-      DB_USER: maintenance
-      DB_PASSWORD: "${MYSQL_PASSWORD:?MYSQL_PASSWORD must be set in .env}"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}"
+      MYSQL_DATABASE: part_db
+      MYSQL_USER: part_user
+      MYSQL_PASSWORD: "${PART_DB_PASSWORD:?set PART_DB_PASSWORD in .env}"
+    volumes: [part-data:/var/lib/mysql]
+    networks: [maintenance-network]
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
+
+  work-order-db:
+    image: mysql:8.4.11
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}"
+      MYSQL_DATABASE: work_order_db
+      MYSQL_USER: work_order_user
+      MYSQL_PASSWORD: "${WORK_ORDER_DB_PASSWORD:?set WORK_ORDER_DB_PASSWORD in .env}"
+    volumes: [work-order-data:/var/lib/mysql]
+    networks: [maintenance-network]
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
+
+  vehicle-service:
+    image: maintenance-vehicle-service:week06
+    build:
+      context: ./services/vehicle-service
+    ports: ["${VEHICLE_PORT:-8081}:8081"]
+    environment:
+      DB_URL: jdbc:mysql://vehicle-db:3306/vehicle_db
+      DB_USER: vehicle_user
+      DB_PASSWORD: ${VEHICLE_DB_PASSWORD:?set VEHICLE_DB_PASSWORD in .env}
     depends_on:
-      mysql:
+      vehicle-db:
         condition: service_healthy
-    networks:
-      - maintenance-network
+    networks: [maintenance-network]
+    restart: unless-stopped
+
+  part-service:
+    image: maintenance-part-service:week06
+    build:
+      context: ./services/part-service
+    ports: ["${PART_PORT:-8083}:8083"]
+    environment:
+      DB_URL: jdbc:mysql://part-db:3306/part_db
+      DB_USER: part_user
+      DB_PASSWORD: ${PART_DB_PASSWORD:?set PART_DB_PASSWORD in .env}
+    depends_on:
+      part-db:
+        condition: service_healthy
+    networks: [maintenance-network]
+    restart: unless-stopped
+
+  work-order-service:
+    image: maintenance-work-order-service:week06
+    build:
+      context: ./services/work-order-service
+    ports: ["${WORK_ORDER_PORT:-8082}:8082"]
+    environment:
+      DB_URL: jdbc:mysql://work-order-db:3306/work_order_db
+      DB_USER: work_order_user
+      DB_PASSWORD: ${WORK_ORDER_DB_PASSWORD:?set WORK_ORDER_DB_PASSWORD in .env}
+      VEHICLE_SERVICE_URL: http://vehicle-service:8081
+      PART_SERVICE_URL: http://part-service:8083
+    depends_on:
+      work-order-db:
+        condition: service_healthy
+      vehicle-service:
+        condition: service_started
+      part-service:
+        condition: service_started
+    networks: [maintenance-network]
     restart: unless-stopped
 
 volumes:
-  mysql-data:
+  vehicle-data:
+  part-data:
+  work-order-data:
 
 networks:
   maintenance-network:
